@@ -1,0 +1,163 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependencies
+/node_modules
+/yarn-error.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignore all logfiles and tempfiles.
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+
+# Ignore pidfiles, but keep the directory.
+/tmp/pids/*
+!/tmp/pids/
+!/tmp/pids/.keep
+
+# Ignore uploaded files in development.
+/storage/*
+!/storage/.keep
+/tmp/storage/*
+!/tmp/storage/
+!/tmp/storage/.keep
+
+# Ignore master key for decrypting credentials and more.
+/config/master.key
+/config/credentials/*.key
+
+# Ignore application configuration
+/config/application.yml
+/config/database.yml
+/config/secrets.yml
+
+# Ignore environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Ignore asset pipeline generated files
+/public/assets
+/public/packs
+/public/packs-test
+/node_modules
+/yarn-error.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignore Vite build files
+/public/vite
+/public/vite-dev
+/public/vite-test
+node_modules/.vite
+
+# Ignore cache files
+.cache
+.sass-cache
+.connect.lock
+.coverage/
+/InstalledFiles
+/pkg/
+/spec/reports/
+/spec/examples.txt
+/test/tmp/
+/test/version_tmp/
+/tmp/
+
+# Ignore bundler config
+/.bundle
+/vendor/bundle
+# Uncomment this line if you run your tests via bundler
+# vendor/bundle
+
+# Ignore all default generated files
+/db/*.sqlite3
+/db/*.sqlite3-*
+/db/*.sqlite3-journal
+
+# Ignore if you're using RVM
+/.rvmrc
+
+# Ignore if you're using rbenv
+/.ruby-version
+/.ruby-gemset
+
+# Ignore if you're using chruby
+/.ruby-version
+
+# Ignore macOS files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Ignore Windows files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Ignore Linux files
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Ignore temporary files
+*.tmp
+*.temp
+
+# Ignore local configuration files
+config/local_env.yml
+config/local_*.yml
+
+# Ignore database dumps
+*.dump
+*.sql
+
+# Ignore coverage reports
+coverage/
+*.coverage
+.coverage.*
+
+# Ignore Spring files
+/spring/*.pid
+
+# Ignore Docker files (if not using Docker for development)
+.dockerignore
+
+# Ignore Terraform files (if using)
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Vite Ruby
+/public/vite*
+node_modules
+# Vite uses dotenv and suggests to ignore local-only env files. See
+# https://vitejs.dev/guide/env-and-mode.html#env-files
+*.local
+
