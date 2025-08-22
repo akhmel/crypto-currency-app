@@ -15,9 +15,10 @@ import {
   useComputedColorScheme,
   useMantineColorScheme,
   Tabs,
-  Stack
+  Stack,
+  Alert
 } from '@mantine/core'
-import { IconSun, IconMoon, IconTrendingUp, IconTrendingDown, IconBell, IconChartLine } from '@tabler/icons-react'
+import { IconSun, IconMoon, IconTrendingUp, IconTrendingDown, IconBell, IconChartLine, IconWifi, IconWifiOff } from '@tabler/icons-react'
 import { Notifications } from '@mantine/notifications'
 
 // Import our new components
@@ -27,6 +28,9 @@ import PriceTicker from './PriceTicker'
 
 // Import services
 import alertService from '../services/alertService'
+
+// Import the real-time data stream hook
+import useCryptoDataStream from '../hooks/useCryptoDataStream'
 
 // Create a dark theme
 const theme = createTheme({
@@ -45,107 +49,27 @@ const theme = createTheme({
 
 // Separate component for the app content to use Mantine hooks
 function AppContent() {
-  const [cryptoData, setCryptoData] = useState([])
-  const [loading, setLoading] = useState(true)
   const [alerts, setAlerts] = useState([])
   const [activeTab, setActiveTab] = useState('prices')
   const { setColorScheme } = useMantineColorScheme()
   const computedColorScheme = useComputedColorScheme('dark')
 
-  // Load initial data
+  // Use the real-time data stream hook
+  const {
+    cryptoData,
+    isConnected,
+    connectionStatus,
+    lastUpdate,
+    error,
+    refreshData,
+    hasData
+  } = useCryptoDataStream()
+
+  // Load alerts from service
   useEffect(() => {
-    loadCryptoData()
     loadAlerts()
   }, [])
 
-  // Load cryptocurrency data from Binance API
-  const loadCryptoData = async () => {
-    setLoading(true)
-    try {
-      // For now, using mock data until Rails API is ready
-      // const data = await binanceApi.getMultiplePrices()
-      
-      // Mock data for development
-      const mockData = [
-        { 
-          symbol: 'BTCUSDT', 
-          name: 'Bitcoin', 
-          price: 43250.50, 
-          priceChange: 1081.25, 
-          priceChangePercent: 2.56, 
-          highPrice: 44500.00, 
-          lowPrice: 42000.00, 
-          volume: 1234567.89, 
-          quoteVolume: 53456789012.34 
-        },
-        { 
-          symbol: 'ETHUSDT', 
-          name: 'Ethereum', 
-          price: 2680.75, 
-          priceChange: 47.25, 
-          priceChangePercent: 1.80, 
-          highPrice: 2750.00, 
-          lowPrice: 2600.00, 
-          volume: 987654.32, 
-          quoteVolume: 2654321098.76 
-        },
-        { 
-          symbol: 'ADAUSDT', 
-          name: 'Cardano', 
-          price: 0.48, 
-          priceChange: -0.0024, 
-          priceChangePercent: -0.50, 
-          highPrice: 0.50, 
-          lowPrice: 0.47, 
-          volume: 1234567890.12, 
-          quoteVolume: 592592592.59 
-        },
-        { 
-          symbol: 'SOLUSDT', 
-          name: 'Solana', 
-          price: 98.50, 
-          priceChange: 3.05, 
-          priceChangePercent: 3.20, 
-          highPrice: 100.00, 
-          lowPrice: 95.00, 
-          volume: 543210.98, 
-          quoteVolume: 53456789.01 
-        },
-        { 
-          symbol: 'DOTUSDT', 
-          name: 'Polkadot', 
-          price: 7.25, 
-          priceChange: 0.15, 
-          priceChangePercent: 2.11, 
-          highPrice: 7.50, 
-          lowPrice: 7.00, 
-          volume: 987654.32, 
-          quoteVolume: 7154321.09 
-        },
-        { 
-          symbol: 'LINKUSDT', 
-          name: 'Chainlink', 
-          price: 15.80, 
-          priceChange: -0.20, 
-          priceChangePercent: -1.25, 
-          highPrice: 16.00, 
-          lowPrice: 15.50, 
-          volume: 654321.09, 
-          quoteVolume: 10345689.01 
-        }
-      ]
-      
-      setCryptoData(mockData)
-    } catch (error) {
-      console.error('Error loading crypto data:', error)
-      // Fallback to empty array
-      setCryptoData([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Load alerts from service
   const loadAlerts = async () => {
     try {
       const alertsData = await alertService.getAlerts()
@@ -190,6 +114,42 @@ function AppContent() {
     setColorScheme(computedColorScheme === 'light' ? 'dark' : 'light')
   }
 
+  const getConnectionStatusColor = () => {
+    switch (connectionStatus) {
+      case 'connected': return 'green'
+      case 'connecting': return 'yellow'
+      case 'reconnecting': return 'orange'
+      case 'disconnected': return 'red'
+      case 'rejected': return 'red'
+      case 'error': return 'red'
+      default: return 'gray'
+    }
+  }
+
+  const getConnectionStatusIcon = () => {
+    switch (connectionStatus) {
+      case 'connected': return <IconWifi size={16} />
+      case 'connecting': return <IconWifi size={16} />
+      case 'reconnecting': return <IconWifi size={16} />
+      case 'disconnected': return <IconWifiOff size={16} />
+      case 'rejected': return <IconWifiOff size={16} />
+      case 'error': return <IconWifiOff size={16} />
+      default: return <IconWifiOff size={16} />
+    }
+  }
+
+  const getConnectionStatusText = () => {
+    switch (connectionStatus) {
+      case 'connected': return 'Live Data'
+      case 'connecting': return 'Connecting...'
+      case 'reconnecting': return 'Reconnecting...'
+      case 'disconnected': return 'Disconnected'
+      case 'rejected': return 'Connection Rejected'
+      case 'error': return 'Connection Error'
+      default: return 'Unknown Status'
+    }
+  }
+
   return (
     <>
       <Notifications />
@@ -208,20 +168,45 @@ function AppContent() {
                   Real-time prices & smart alerts
                 </Text>
               </Group>
-              <ActionIcon
-                variant="default"
-                size="lg"
-                onClick={toggleColorScheme}
-                aria-label="Toggle color scheme"
-              >
-                {computedColorScheme === 'light' ? <IconMoon size={20} /> : <IconSun size={20} />}
-              </ActionIcon>
+              <Group>
+                {/* Connection Status Indicator */}
+                <Badge
+                  variant="light"
+                  color={getConnectionStatusColor()}
+                  leftSection={getConnectionStatusIcon()}
+                  size="sm"
+                >
+                  {getConnectionStatusText()}
+                </Badge>
+                
+                <ActionIcon
+                  variant="default"
+                  size="lg"
+                  onClick={toggleColorScheme}
+                  aria-label="Toggle color scheme"
+                >
+                  {computedColorScheme === 'light' ? <IconMoon size={20} /> : <IconSun size={20} />}
+                </ActionIcon>
+              </Group>
             </Group>
           </Container>
         </AppShell.Header>
 
         <AppShell.Main>
           <Container size="xl" py="xl">
+            {/* Connection Error Alert */}
+            {error && (
+              <Alert 
+                color="red" 
+                title="Connection Error" 
+                mb="lg"
+                withCloseButton
+                onClose={() => {}}
+              >
+                {error}
+              </Alert>
+            )}
+
             <Tabs value={activeTab} onChange={setActiveTab}>
               <Tabs.List mb="lg">
                 <Tabs.Tab value="prices" leftSection={<IconChartLine size={16} />}>
@@ -237,8 +222,9 @@ function AppContent() {
                   <Grid.Col span={{ base: 12, lg: 8 }}>
                     <PriceTicker 
                       cryptoData={cryptoData}
-                      onRefresh={loadCryptoData}
-                      loading={loading}
+                      onRefresh={refreshData}
+                      loading={!isConnected || !hasData}
+                      connectionStatus={connectionStatus}
                     />
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, lg: 4 }}>
