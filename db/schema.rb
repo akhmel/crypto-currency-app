@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_08_22_120827) do
+ActiveRecord::Schema[7.2].define(version: 2025_08_22_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -33,5 +33,11 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_22_120827) do
     t.text "preferences"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "telegram_chat_id"
+    t.string "telegram_bot_token"
+    t.string "log_file_path"
+    t.text "os_notification_settings"
+    t.index ["log_file_path"], name: "index_user_notification_channels_on_log_file_path"
+    t.index ["telegram_chat_id"], name: "index_user_notification_channels_on_telegram_chat_id"
   end
 end

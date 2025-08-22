@@ -16,6 +16,7 @@ import {
   Divider
 } from '@mantine/core'
 import { IconBell, IconTrash, IconEdit, IconPlus, IconAlertTriangle } from '@tabler/icons-react'
+import NotificationChannelSelector from './NotificationChannelSelector'
 
 const AlertManager = ({ alerts = [], onAlertAdd, onAlertUpdate, onAlertDelete }) => {
   const [showAddModal, setShowAddModal] = useState(false)
@@ -24,7 +25,8 @@ const AlertManager = ({ alerts = [], onAlertAdd, onAlertUpdate, onAlertDelete })
     symbol: '',
     targetPrice: '',
     type: 'above',
-    enabled: true
+    enabled: true,
+    notificationChannelId: null
   })
 
   const handleAddAlert = () => {
@@ -34,7 +36,7 @@ const AlertManager = ({ alerts = [], onAlertAdd, onAlertUpdate, onAlertDelete })
         targetPrice: parseFloat(newAlert.targetPrice),
         id: Date.now()
       })
-      setNewAlert({ symbol: '', targetPrice: '', type: 'above', enabled: true })
+      setNewAlert({ symbol: '', targetPrice: '', type: 'above', enabled: true, notificationChannelId: null })
       setShowAddModal(false)
     }
   }
@@ -63,6 +65,13 @@ const AlertManager = ({ alerts = [], onAlertAdd, onAlertUpdate, onAlertDelete })
   const getAlertStatusText = (alert) => {
     if (!alert.enabled) return 'Disabled'
     return alert.type === 'above' ? 'Above' : 'Below'
+  }
+
+  const openEditModal = (alert) => {
+    setEditingAlert({
+      ...alert,
+      notificationChannelId: alert.notificationChannelId || null
+    })
   }
 
   return (
@@ -101,37 +110,33 @@ const AlertManager = ({ alerts = [], onAlertAdd, onAlertUpdate, onAlertDelete })
                     <div>
                       <Group gap="xs">
                         <Text fw={500}>{alert.symbol}</Text>
-                        <Badge
-                          variant="light"
-                          color={getAlertStatusColor(alert)}
-                          size="sm"
-                        >
+                        <Badge color={getAlertStatusColor(alert)} variant="light">
                           {getAlertStatusText(alert)}
                         </Badge>
-                        {alert.enabled && (
-                          <Badge variant="dot" color="blue" size="sm">
-                            Active
+                        {alert.notificationChannelId && (
+                          <Badge color="blue" variant="light" size="xs">
+                            📧 Channel
                           </Badge>
                         )}
                       </Group>
                       <Text size="sm" c="dimmed">
-                        Alert when price goes {alert.type} ${alert.targetPrice}
+                        Target: ${alert.targetPrice}
                       </Text>
                     </div>
                     <Group gap="xs">
                       <ActionIcon
-                        variant="subtle"
                         color="blue"
-                        onClick={() => setEditingAlert(alert)}
-                        size="sm"
+                        variant="light"
+                        onClick={() => openEditModal(alert)}
+                        title="Edit Alert"
                       >
                         <IconEdit size={16} />
                       </ActionIcon>
                       <ActionIcon
-                        variant="subtle"
                         color="red"
+                        variant="light"
                         onClick={() => handleDeleteAlert(alert.id)}
-                        size="sm"
+                        title="Delete Alert"
                       >
                         <IconTrash size={16} />
                       </ActionIcon>
@@ -149,7 +154,7 @@ const AlertManager = ({ alerts = [], onAlertAdd, onAlertUpdate, onAlertDelete })
         opened={showAddModal}
         onClose={() => setShowAddModal(false)}
         title="Add Price Alert"
-        size="sm"
+        size="md"
       >
         <Stack>
           <TextInput
@@ -185,6 +190,14 @@ const AlertManager = ({ alerts = [], onAlertAdd, onAlertUpdate, onAlertDelete })
             checked={newAlert.enabled}
             onChange={(event) => setNewAlert({ ...newAlert, enabled: event.currentTarget.checked })}
           />
+
+          <Divider label="Notification Settings" labelPosition="center" />
+          
+          <NotificationChannelSelector
+            selectedChannelId={newAlert.notificationChannelId}
+            onChannelChange={(channelId) => setNewAlert({ ...newAlert, notificationChannelId: channelId })}
+            showCreateButton={true}
+          />
           
           <Group justify="flex-end">
             <Button variant="outline" onClick={() => setShowAddModal(false)}>
@@ -205,7 +218,7 @@ const AlertManager = ({ alerts = [], onAlertAdd, onAlertUpdate, onAlertDelete })
         opened={!!editingAlert}
         onClose={() => setEditingAlert(null)}
         title="Edit Price Alert"
-        size="sm"
+        size="md"
       >
         {editingAlert && (
           <Stack>
@@ -239,6 +252,14 @@ const AlertManager = ({ alerts = [], onAlertAdd, onAlertUpdate, onAlertDelete })
               label="Enable Alert"
               checked={editingAlert.enabled}
               onChange={(event) => setEditingAlert({ ...editingAlert, enabled: event.currentTarget.checked })}
+            />
+
+            <Divider label="Notification Settings" labelPosition="center" />
+            
+            <NotificationChannelSelector
+              selectedChannelId={editingAlert.notificationChannelId}
+              onChannelChange={(channelId) => setEditingAlert({ ...editingAlert, notificationChannelId: channelId })}
+              showCreateButton={true}
             />
             
             <Group justify="flex-end">

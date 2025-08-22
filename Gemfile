@@ -49,6 +49,9 @@ gem 'actioncable', '~> 7.2', '>= 7.2.2.2'
 # Mailgun for email notifications
 gem 'mailgun-ruby', '~> 1.2'
 
+# Telegram bot for notifications
+gem 'telegram-bot-ruby', '~> 2.4'
+
 # Environment variable management
 gem 'dotenv-rails', '~> 2.8'
 

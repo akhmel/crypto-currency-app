@@ -2,8 +2,11 @@ class UserNotificationChannel < ApplicationRecord
   has_many :user_alerts, dependent: :nullify
   
   # Validations
-  validates :channel_type, presence: true, inclusion: { in: %w[browser email] }
+  validates :channel_type, presence: true, inclusion: { in: %w[browser email telegram log_file os_notification] }
   validates :email_address, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }, if: :email_channel?
+  validates :telegram_chat_id, presence: true, if: :telegram_channel?
+  validates :telegram_bot_token, presence: true, if: :telegram_channel?
+  validates :log_file_path, presence: true, if: :log_file_channel?
   validates :enabled, inclusion: { in: [true, false] }
   
   # Scopes
@@ -11,6 +14,9 @@ class UserNotificationChannel < ApplicationRecord
   scope :by_type, ->(type) { where(channel_type: type) }
   scope :browser_channels, -> { where(channel_type: 'browser') }
   scope :email_channels, -> { where(channel_type: 'email') }
+  scope :telegram_channels, -> { where(channel_type: 'telegram') }
+  scope :log_file_channels, -> { where(channel_type: 'log_file') }
+  scope :os_notification_channels, -> { where(channel_type: 'os_notification') }
   scope :active, -> { enabled.where('created_at > ?', 30.days.ago) }
   
   # Callbacks
@@ -26,6 +32,18 @@ class UserNotificationChannel < ApplicationRecord
   def email_channel?
     channel_type == 'email'
   end
+
+  def telegram_channel?
+    channel_type == 'telegram'
+  end
+
+  def log_file_channel?
+    channel_type == 'log_file'
+  end
+
+  def os_notification_channel?
+    channel_type == 'os_notification'
+  end
   
   def status
     enabled? ? 'active' : 'inactive'
@@ -37,6 +55,12 @@ class UserNotificationChannel < ApplicationRecord
       'Browser Notifications'
     when 'email'
       "Email: #{email_address}"
+    when 'telegram'
+      "Telegram: #{telegram_chat_id}"
+    when 'log_file'
+      "Log File: #{log_file_path}"
+    when 'os_notification'
+      'OS Notifications'
     else
       'Unknown Channel'
     end
@@ -51,6 +75,12 @@ class UserNotificationChannel < ApplicationRecord
       true
     when 'email'
       send_email_notification(alert_data)
+    when 'telegram'
+      send_telegram_notification(alert_data)
+    when 'log_file'
+      write_log_notification(alert_data)
+    when 'os_notification'
+      send_os_notification(alert_data)
     else
       false
     end
@@ -62,6 +92,12 @@ class UserNotificationChannel < ApplicationRecord
       true # Browser test is handled by frontend
     when 'email'
       send_test_email
+    when 'telegram'
+      send_test_telegram
+    when 'log_file'
+      write_test_log
+    when 'os_notification'
+      send_test_os_notification
     else
       false
     end
@@ -124,6 +160,98 @@ class UserNotificationChannel < ApplicationRecord
       false
     end
   end
+
+  def send_telegram_notification(alert_data)
+    return false unless telegram_channel? && telegram_chat_id.present? && telegram_bot_token.present?
+    
+    begin
+      require 'telegram/bot'
+      bot = Telegram::Bot::Client.new(telegram_bot_token)
+      
+      # Build message
+      message = build_telegram_message(alert_data)
+      
+      # Parse preferences
+      prefs = preferences_hash
+      
+      # Send message
+      bot.api.send_message(
+        chat_id: telegram_chat_id,
+        text: message,
+        parse_mode: prefs['parse_mode'] || 'HTML',
+        disable_web_page_preview: prefs['disable_web_page_preview'] || false
+      )
+      
+      Rails.logger.info "Alert Telegram message sent successfully to #{telegram_chat_id} for #{alert_data[:symbol]}"
+      true
+    rescue => e
+      Rails.logger.error "Failed to send alert Telegram message: #{e.message}"
+      false
+    end
+  end
+
+  def write_log_notification(alert_data)
+    return false unless log_file_channel? && log_file_path.present?
+    
+    begin
+      # Parse preferences
+      prefs = preferences_hash
+      
+      # Create log directory if it doesn't exist
+      log_dir = File.dirname(log_file_path)
+      FileUtils.mkdir_p(log_dir) unless Dir.exist?(log_dir)
+      
+      # Build log message
+      log_message = build_log_message(alert_data, prefs)
+      
+      # Write to log file
+      File.open(log_file_path, 'a') do |file|
+        file.write(log_message)
+      end
+      
+      Rails.logger.info "Alert log message written successfully to #{log_file_path} for #{alert_data[:symbol]}"
+      true
+    rescue => e
+      Rails.logger.error "Failed to write alert log message: #{e.message}"
+      false
+    end
+  end
+
+  def send_os_notification(alert_data)
+    begin
+      # Parse preferences
+      prefs = preferences_hash
+      
+      # Build notification message
+      title = "🚨 Crypto Alert: #{alert_data[:symbol]}"
+      message = "#{alert_data[:alert_type].upcase} $#{alert_data[:target_price]} - Current: $#{alert_data[:current_price]}"
+      
+      # Send OS notification based on platform
+      case RUBY_PLATFORM
+      when /darwin/ # macOS
+        system("osascript -e 'display notification \"#{message}\" with title \"#{title}\" sound name \"Glass\"'")
+      when /linux/
+        if system("which notify-send > /dev/null 2>&1")
+          priority = prefs['priority'] || 'normal'
+          timeout = prefs['timeout'] || 5000
+          system("notify-send -u #{priority} -t #{timeout} '#{title}' '#{message}'")
+        else
+          system("logger -t 'CryptoAlert' '#{title}: #{message}'")
+        end
+      when /mswin|mingw/ # Windows
+        script = "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show('#{message}', '#{title}', [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)"
+        system("powershell -Command \"#{script}\"")
+      else
+        system("logger -t 'CryptoAlert' '#{title}: #{message}'")
+      end
+      
+      Rails.logger.info "Alert OS notification sent successfully for #{alert_data[:symbol]}"
+      true
+    rescue => e
+      Rails.logger.error "Failed to send alert OS notification: #{e.message}"
+      false
+    end
+  end
   
   def send_test_email
     return false unless email_channel? && email_address.present?
@@ -149,6 +277,84 @@ class UserNotificationChannel < ApplicationRecord
       true
     rescue => e
       Rails.logger.error "Failed to send test email: #{e.message}"
+      false
+    end
+  end
+
+  def send_test_telegram
+    return false unless telegram_channel? && telegram_chat_id.present? && telegram_bot_token.present?
+    
+    begin
+      require 'telegram/bot'
+      bot = Telegram::Bot::Client.new(telegram_bot_token)
+      
+      message = "🚨 Test notification from Crypto Alert System!\n\nIf you received this, your Telegram notifications are working correctly!\n\nTimestamp: #{Time.current}"
+      
+      prefs = preferences_hash
+      bot.api.send_message(
+        chat_id: telegram_chat_id,
+        text: message,
+        parse_mode: prefs['parse_mode'] || 'HTML',
+        disable_web_page_preview: prefs['disable_web_page_preview'] || false
+      )
+      
+      Rails.logger.info "Test Telegram message sent successfully to #{telegram_chat_id}"
+      true
+    rescue => e
+      Rails.logger.error "Failed to send test Telegram message: #{e.message}"
+      false
+    end
+  end
+
+  def write_test_log
+    return false unless log_file_channel? && log_file_path.present?
+    
+    begin
+      prefs = preferences_hash
+      
+      log_dir = File.dirname(log_file_path)
+      FileUtils.mkdir_p(log_dir) unless Dir.exist?(log_dir)
+      
+      log_message = "[#{Time.current.strftime('%Y-%m-%d %H:%M:%S')}] [TEST] [#{prefs['log_level'] || 'INFO'}] Test notification from Crypto Alert System - If you see this, your log file notifications are working correctly!\n"
+      
+      File.open(log_file_path, 'a') do |file|
+        file.write(log_message)
+      end
+      
+      Rails.logger.info "Test log message written successfully to #{log_file_path}"
+      true
+    rescue => e
+      Rails.logger.error "Failed to write test log message: #{e.message}"
+      false
+    end
+  end
+
+  def send_test_os_notification
+    begin
+      prefs = preferences_hash
+      
+      case RUBY_PLATFORM
+      when /darwin/ # macOS
+        system("osascript -e 'display notification \"Test notification from Crypto Alert System!\" with title \"Crypto Alert Test\" sound name \"Glass\"'")
+      when /linux/
+        if system("which notify-send > /dev/null 2>&1")
+          priority = prefs['priority'] || 'normal'
+          timeout = prefs['timeout'] || 5000
+          system("notify-send -u #{priority} -t #{timeout} 'Crypto Alert Test' 'Test notification from Crypto Alert System!'")
+        else
+          system("logger -t 'CryptoAlert' 'Test notification from Crypto Alert System!'")
+        end
+      when /mswin|mingw/ # Windows
+        script = "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show('Test notification from Crypto Alert System!', 'Crypto Alert Test', [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)"
+        system("powershell -Command \"#{script}\"")
+      else
+        system("logger -t 'CryptoAlert' 'Test notification from Crypto Alert System!'")
+      end
+      
+      Rails.logger.info "Test OS notification sent successfully"
+      true
+    rescue => e
+      Rails.logger.error "Failed to send test OS notification: #{e.message}"
       false
     end
   end
@@ -204,5 +410,32 @@ class UserNotificationChannel < ApplicationRecord
       </body>
       </html>
     HTML
+  end
+
+  def build_telegram_message(alert_data)
+    <<~MESSAGE
+      🚨 <b>CRYPTO ALERT TRIGGERED!</b>
+      
+      <b>Symbol:</b> #{alert_data[:symbol]}
+      <b>Alert Type:</b> #{alert_data[:alert_type].upcase}
+      <b>Target Price:</b> $#{alert_data[:target_price]}
+      <b>Current Price:</b> $#{alert_data[:current_price]}
+      <b>Triggered At:</b> #{alert_data[:triggered_at]}
+      
+      Your cryptocurrency price alert has been triggered!
+      
+      ---
+      <i>Crypto Alert System</i>
+      <i>Sent at: #{Time.current}</i>
+    MESSAGE
+  end
+
+  def build_log_message(alert_data, prefs)
+    timestamp = Time.current.strftime('%Y-%m-%d %H:%M:%S')
+    log_level = prefs['log_level'] || 'INFO'
+    
+    <<~LOG
+      [#{timestamp}] [ALERT] [#{log_level}] Crypto Alert Triggered - Symbol: #{alert_data[:symbol]}, Type: #{alert_data[:alert_type].upcase}, Target: $#{alert_data[:target_price]}, Current: $#{alert_data[:current_price]}, Triggered: #{alert_data[:triggered_at]}
+    LOG
   end
 end

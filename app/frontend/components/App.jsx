@@ -18,13 +18,14 @@ import {
   Stack,
   Alert
 } from '@mantine/core'
-import { IconSun, IconMoon, IconTrendingUp, IconTrendingDown, IconBell, IconChartLine, IconWifi, IconWifiOff } from '@tabler/icons-react'
+import { IconSun, IconMoon, IconTrendingUp, IconTrendingDown, IconBell, IconChartLine, IconWifi, IconWifiOff, IconSettings } from '@tabler/icons-react'
 import { Notifications } from '@mantine/notifications'
 
 // Import our new components
 import PriceAlert from './PriceAlert'
 import AlertManager from './AlertManager'
 import PriceTicker from './PriceTicker'
+import NotificationChannelManager from './NotificationChannelManager'
 
 // Import services
 import alertService from '../services/alertService'
@@ -72,13 +73,13 @@ function AppContent() {
 
   const loadAlerts = async () => {
     console.log("Loading alerts...-------------------")
-    // try {
-    //   const alertsData = await alertService.getAlerts()
-    //   setAlerts(alertsData)
-    // } catch (error) {
-    //   console.error('Error loading alerts:', error)
-    //   setAlerts([])
-    // }
+    try {
+      const alertsData = await alertService.getAlerts()
+      setAlerts(alertsData)
+    } catch (error) {
+      console.error('Error loading alerts:', error)
+      setAlerts([])
+    }
   }
 
   // Handle alert changes
@@ -216,6 +217,9 @@ function AppContent() {
                 <Tabs.Tab value="alerts" leftSection={<IconBell size={16} />}>
                   Price Alerts
                 </Tabs.Tab>
+                <Tabs.Tab value="channels" leftSection={<IconSettings size={16} />}>
+                  Notification Channels
+                </Tabs.Tab>
               </Tabs.List>
 
               <Tabs.Panel value="prices">
@@ -259,6 +263,10 @@ function AppContent() {
                     ))}
                   </Grid>
                 </Stack>
+              </Tabs.Panel>
+
+              <Tabs.Panel value="channels">
+                <NotificationChannelManager />
               </Tabs.Panel>
             </Tabs>
           </Container>
