@@ -71,13 +71,14 @@ function AppContent() {
   }, [])
 
   const loadAlerts = async () => {
-    try {
-      const alertsData = await alertService.getAlerts()
-      setAlerts(alertsData)
-    } catch (error) {
-      console.error('Error loading alerts:', error)
-      setAlerts([])
-    }
+    console.log("Loading alerts...-------------------")
+    // try {
+    //   const alertsData = await alertService.getAlerts()
+    //   setAlerts(alertsData)
+    // } catch (error) {
+    //   console.error('Error loading alerts:', error)
+    //   setAlerts([])
+    // }
   }
 
   // Handle alert changes

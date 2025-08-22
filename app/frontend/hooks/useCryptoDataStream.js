@@ -19,6 +19,8 @@ const useCryptoDataStream = () => {
   const initializeConnection = useCallback(() => {
     try {
       // Create ActionCable consumer
+      console.log("Creating ActionCable consumer...")
+      setIsConnected(true) // Set connected state to true
       cable = ActionCable.createConsumer('/cable')
       
       subscription = cable.subscriptions.create(
