@@ -5,14 +5,30 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Render dynamic PWA files from app/views/pwa/*
-  get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
-  get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
+  # Defines the root path route ("/")
+  root "home#index"
 
-  # Mount ActionCable for real-time cryptocurrency data streaming
+  # Mount ActionCable for WebSocket connections
   mount ActionCable.server => '/cable'
 
-  # Defines the root path route ("/")
-  # root "posts#index"
-  root "home#index"
+  # API routes
+  namespace :api do
+    namespace :v1 do
+      resources :user_alerts do
+        member do
+          patch :toggle
+        end
+        collection do
+          get :check_triggers
+        end
+      end
+
+      resources :user_notification_channels do
+        member do
+          patch :toggle
+          post :test
+        end
+      end
+    end
+  end
 end

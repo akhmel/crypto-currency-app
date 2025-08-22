@@ -46,6 +46,20 @@ gem 'concurrent-ruby', '~> 1.3', '>= 1.3.5'
 # ActionCable for real-time communication
 gem 'actioncable', '~> 7.2', '>= 7.2.2.2'
 
+# Mailgun for email notifications
+gem 'mailgun-ruby', '~> 1.2'
+
+# Environment variable management
+gem 'dotenv-rails', '~> 2.8'
+
+# Database credentials and configuration
+gem 'figaro', '~> 1.2'
+
+# PostgreSQL adapter (already included in Rails)
+# gem 'pg', '~> 1.5'
+
+
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
