@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.2.2", ">= 7.2.2.2"
+gem "rails", "~> 8.0.2"
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
 # Use postgresql as the database for Active Record
@@ -44,7 +44,7 @@ gem 'websocket-client-simple', '~> 0.9.0'
 gem 'concurrent-ruby', '~> 1.3', '>= 1.3.5'
 
 # ActionCable for real-time communication
-gem 'actioncable', '~> 7.2', '>= 7.2.2.2'
+gem 'actioncable', '~> 8.0'
 
 # Mailgun for email notifications
 gem 'mailgun-ruby', '~> 1.2'
