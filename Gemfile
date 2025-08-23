@@ -53,7 +53,7 @@ gem 'mailgun-ruby', '~> 1.2'
 gem 'telegram-bot-ruby', '~> 2.4'
 
 # Environment variable management
-gem 'dotenv-rails', '~> 2.8'
+gem 'dotenv-rails', '~> 3.1'
 
 # Database credentials and configuration
 gem 'figaro', '~> 1.2'
