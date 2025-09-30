@@ -47,7 +47,7 @@ gem 'concurrent-ruby', '~> 1.3', '>= 1.3.5'
 gem 'actioncable', '~> 7.2', '>= 7.2.2.2'
 
 # Mailgun for email notifications
-gem 'mailgun-ruby', '~> 1.2'
+gem 'mailgun-ruby', '~> 1.4'
 
 # Telegram bot for notifications
 gem 'telegram-bot-ruby', '~> 2.4'
