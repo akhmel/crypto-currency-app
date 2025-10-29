@@ -44,7 +44,7 @@ gem 'websocket-client-simple', '~> 0.9.0'
 gem 'concurrent-ruby', '~> 1.3', '>= 1.3.5'
 
 # ActionCable for real-time communication
-gem 'actioncable', '~> 7.2', '>= 7.2.2.2'
+gem 'actioncable', '~> 7.2'
 
 # Mailgun for email notifications
 gem 'mailgun-ruby', '~> 1.2'
